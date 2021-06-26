@@ -15,6 +15,10 @@ type Handlers struct {
 	ExecPath string
 }
 
+type IncomingData struct {
+	PodName string
+}
+
 func NewHandlers(executable string) *Handlers {
 	execPath, err := exec.LookPath(executable)
 	if err != nil {
@@ -45,6 +49,49 @@ func (h *Handlers) GetVersion(w http.ResponseWriter, r *http.Request) {
 		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
 		return
 	}
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) GetPods(w http.ResponseWriter, r *http.Request) {
+	cmdGetPods := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "get", "pods"},
+	}
+
+	log.Println(cmdGetPods.String())
+
+	result, err := cmdGetPods.Output()
+	if err != nil {
+		log.Println(err)
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
+		return
+	}
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) DescribePod(w http.ResponseWriter, r *http.Request) {
+	var data IncomingData
+	getJson(r, &data)
+	if data.PodName == "" {
+		log.Println("NO POD NAME PASSED")
+		sendJson(w, http.StatusInternalServerError, Message{Message: "No pod name passed"})
+		return
+	}
+
+	cmdDescribePod := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "describe", "pod", data.PodName},
+	}
+
+	log.Println(cmdDescribePod.String())
+
+	result, err := cmdDescribePod.Output()
+	if err != nil {
+		log.Println(err)
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
+		return
+	}
+
 	sendJson(w, http.StatusOK, Message{Message: string(result)})
 }
 

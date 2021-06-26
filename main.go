@@ -19,6 +19,8 @@ func main() {
 	r.HandleFunc("/", h.WelcomeMessage).Methods("GET")
 	r.HandleFunc("/check", h.CheckKubectl).Methods("GET")
 	r.HandleFunc("/version", h.GetVersion)
+	r.HandleFunc("/get-pods", h.GetPods)
+	r.HandleFunc("/describe-pod", h.DescribePod).Methods("POST")
 
 	fmt.Println("Application listening at port " + port)
 	http.ListenAndServe(port, r)
