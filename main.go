@@ -16,6 +16,8 @@ func main() {
 	h := handlers.NewHandlers()
 
 	r.HandleFunc("/", h.WelcomeMessage).Methods("GET")
+	r.HandleFunc("/check", h.CheckKubectl).Methods("GET")
+	r.HandleFunc("/version", h.GetVersion)
 
 	fmt.Println("Application listening at port " + port)
 	http.ListenAndServe(port, r)
