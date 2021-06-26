@@ -12,10 +12,17 @@ type Message struct {
 }
 
 type Handlers struct {
+	ExecPath string
 }
 
-func NewHandlers() *Handlers {
-	return &Handlers{}
+func NewHandlers(executable string) *Handlers {
+	execPath, err := exec.LookPath(executable)
+	if err != nil {
+		log.Fatal("could not find executable")
+	}
+	return &Handlers{
+		ExecPath: execPath,
+	}
 }
 
 func (h *Handlers) WelcomeMessage(w http.ResponseWriter, r *http.Request) {
@@ -23,26 +30,13 @@ func (h *Handlers) WelcomeMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) CheckKubectl(w http.ResponseWriter, r *http.Request) {
-	path, err := exec.LookPath("kubectl")
-	if err != nil {
-		log.Println(err)
-		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not get exec path for kubectl"})
-		return
-	}
-	sendJson(w, http.StatusOK, Message{Message: "Your kubectl path: " + path})
+	sendJson(w, http.StatusOK, Message{Message: "Your kubectl path: " + h.ExecPath})
 }
 
 func (h *Handlers) GetVersion(w http.ResponseWriter, r *http.Request) {
-	kubectlExecutable, err := exec.LookPath("kubectl")
-	if err != nil {
-		log.Println(err)
-		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not get exec path for kubectl"})
-		return
-	}
-
 	cmdKubectlVersion := &exec.Cmd{
-		Path: kubectlExecutable,
-		Args: []string{kubectlExecutable, "version"},
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "version"},
 	}
 
 	result, err := cmdKubectlVersion.Output()

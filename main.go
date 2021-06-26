@@ -9,11 +9,12 @@ import (
 )
 
 const port = ":8080"
+const exec = "kubectl"
 
 func main() {
 	r := mux.NewRouter()
 
-	h := handlers.NewHandlers()
+	h := handlers.NewHandlers(exec)
 
 	r.HandleFunc("/", h.WelcomeMessage).Methods("GET")
 	r.HandleFunc("/check", h.CheckKubectl).Methods("GET")
