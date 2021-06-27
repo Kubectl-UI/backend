@@ -6,12 +6,17 @@ const url = 'http://localhost:8080'
 
 const getPodsButton = document.getElementById('get-pods')
 const describePodButton = document.getElementById('describe-pod')
+
 const podName = document.getElementById('pod-name')
-const createPod = document.getElementById('create-pod')
+const filePath = document.getElementById('file-path')
+
+const createPodButton = document.getElementById('create-pod')
+const deletePodButton = document.getElementById('delete-pod')
 
 getPodsButton.onclick = getPods
 describePodButton.onclick = describePod
-createPod.onclick = createPod
+createPodButton.onclick = createPod
+deletePodButton.onclick = deletePod
 
 
 async function getPods() {
@@ -36,5 +41,35 @@ async function describePod() {
 }
 
 async function createPod() {
-  
+  const filePathValue = filePath.value
+
+  console.log(filePathValue)
+  console.log(filePathValue.split('.')[filePathValue.split().length - 1])
+  if (!filePath.value) return alert('No Pod file definition passed')
+  if (!['yml', 'yaml'].includes(filePathValue.split('.')[filePathValue.split('.').length - 1])) return alert('File definition must be of yaml type')
+
+  const data = {
+    filepath: filePathValue
+  }
+  const result = await fetch(`${url}/create-pod`, {
+    method: 'post',
+    body: JSON.stringify(data)
+  })
+  const body = await result.json()
+  console.log(body)
+  termional.innerHTML = body.Message
+}
+
+async function deletePod() {
+  if (!podName.value) return alert('Input pod name')
+  const data = {
+    PodName: podName.value
+  }
+  const result = await fetch(`${url}/delete-pod`, {
+    method: 'post',
+    body: JSON.stringify(data)
+  })
+  const body = await result.json()
+  console.log(body)
+  termional.innerHTML = body.Message
 }
