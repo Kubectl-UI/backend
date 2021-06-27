@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	handler "kubectl-gui/handlers"
 	"net/http"
+
+	handler "kubectl-gui/handlers"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
