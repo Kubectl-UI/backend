@@ -18,6 +18,8 @@ type Handlers struct {
 type IncomingData struct {
 	PodName string
 	FilePath string
+	FromPort string
+	ToPort string
 }
 
 func NewHandlers(executable string) *Handlers {
@@ -139,6 +141,33 @@ func (h *Handlers) DeletePod(w http.ResponseWriter, r *http.Request) {
 	log.Println(cmdDeletePod.String())
 
 	result, err := cmdDeletePod.Output()
+	if err != nil {
+		log.Println(err)
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
+		return
+	}
+
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) PortForwadPod(w http.ResponseWriter, r *http.Request) {
+	var data IncomingData
+	getJson(r, &data)
+
+	if data.ToPort == "" || data.FromPort == "" {
+		log.Println("Need to pass in a toport and fromport value")
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Port values missing"})
+		return
+	}
+
+	cmdPortFoward := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "port-forward", data.PodName, data.FromPort + ":" + data.ToPort},
+	}
+
+	log.Println(cmdPortFoward.String())
+
+	result, err := cmdPortFoward.Output()
 	if err != nil {
 		log.Println(err)
 		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
