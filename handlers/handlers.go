@@ -17,6 +17,7 @@ type Handlers struct {
 
 type IncomingData struct {
 	PodName string
+	FilePath string
 }
 
 func NewHandlers(executable string) *Handlers {
@@ -86,6 +87,58 @@ func (h *Handlers) DescribePod(w http.ResponseWriter, r *http.Request) {
 	log.Println(cmdDescribePod.String())
 
 	result, err := cmdDescribePod.Output()
+	if err != nil {
+		log.Println(err)
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
+		return
+	}
+
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) CreatePod(w http.ResponseWriter, r *http.Request) {
+	var data IncomingData
+	getJson(r, &data)
+	if data.FilePath == "" {
+		log.Println("NO FILE NAME PASSED")
+		sendJson(w, http.StatusInternalServerError, Message{Message: "No file name passed"})
+		return
+	}
+
+	cmdCreatePod := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "apply", "-f", data.FilePath},
+	}
+
+	log.Println(cmdCreatePod.String())
+
+	result, err := cmdCreatePod.Output()
+	if err != nil {
+		log.Println(err)
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
+		return
+	}
+
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) DeletePod(w http.ResponseWriter, r *http.Request) {
+	var data IncomingData
+	getJson(r, &data)
+	if data.PodName == "" {
+		log.Println("NO POD NAME PASSED")
+		sendJson(w, http.StatusInternalServerError, Message{Message: "No pod name passed"})
+		return
+	}
+
+	cmdDeletePod := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "delete", "pod", data.PodName},
+	}
+
+	log.Println(cmdDeletePod.String())
+
+	result, err := cmdDeletePod.Output()
 	if err != nil {
 		log.Println(err)
 		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
