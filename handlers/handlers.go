@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os/exec"
@@ -16,10 +17,10 @@ type Handlers struct {
 }
 
 type IncomingData struct {
-	PodName string
+	PodName  string
 	FilePath string
 	FromPort string
-	ToPort string
+	ToPort   string
 }
 
 func NewHandlers(executable string) *Handlers {
@@ -101,6 +102,7 @@ func (h *Handlers) DescribePod(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) CreatePod(w http.ResponseWriter, r *http.Request) {
 	var data IncomingData
 	getJson(r, &data)
+	fmt.Println(data)
 	if data.FilePath == "" {
 		log.Println("NO FILE NAME PASSED")
 		sendJson(w, http.StatusInternalServerError, Message{Message: "No file name passed"})
