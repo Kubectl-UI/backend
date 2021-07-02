@@ -8,3 +8,4 @@ require (
 )
 
 replace github.com/phirmware/kubectl-gui/handlers => ./kubectl-gui/handlers
+replace github.com/phirmware/kubectl-gui/utils => ./kubectl-gui/utils

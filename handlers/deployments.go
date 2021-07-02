@@ -5,6 +5,10 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"path/filepath"
+	"strconv"
+
+	utils "github.com/phirmware/kubectl-gui/utils"
 )
 
 type DeploymentBody struct {
@@ -70,23 +74,29 @@ func (h *Handlers) CreateDeployments(w http.ResponseWriter, r *http.Request) {
 		command = append(command, "--image="+data.Image)
 	}
 
+	if data.NameSpace != "" {
+		getNamespace := &exec.Cmd{
+			Path: h.ExecPath,
+			Args: []string{h.ExecPath, "get", "-n", data.NameSpace},
+		}
+
+		_, err := getNamespace.Output()
+
+		if err != nil {
+			sendJson(w, http.StatusBadRequest, Message{Message: "name space does not exist"})
+			return
+		}
+
+		command = append(command, "-n="+data.NameSpace)
+	}
+
 	if data.Replicas != 0 {
-		command = append(command, "-r=", string(data.Replicas))
+		command = append(command, "-r="+strconv.Itoa(data.Replicas))
 	}
 
 	if data.Execute {
 		command = append(command, "--run-dry -o=yaml")
 	}
-
-	// get image -name -replicas -port to be exposed
-
-	// kubectl create deployment kubernetes-bootcamp --image=gcr.io/google-samples/kubernetes-bootcamp:v1
-
-	// 	name,
-	// 	image,
-	// 	ns
-	// 	port=-1: The port that this container exposes.
-	//   -r, --replicas=1
 
 	cmdCreatePod := &exec.Cmd{
 		Path: h.ExecPath,
@@ -102,4 +112,74 @@ func (h *Handlers) CreateDeployments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) DeleteDeployments(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+	ns := r.URL.Query().Get("ns")
+	if name == "" {
+		sendJson(w, http.StatusBadRequest, Message{Message: "name is required"})
+		return
+	}
+	var command []string
+
+	if ns != "" {
+		command = append(command, h.ExecPath, "delete", "deployments", name, "-n=", ns)
+	} else {
+		command = append(command, h.ExecPath, "delete", "deployments", name)
+	}
+	cmdDeleteDeployments := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: command,
+	}
+	result, err := cmdDeleteDeployments.Output()
+	if err != nil {
+		log.Println(err)
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
+		return
+	}
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) UpdateDeployments(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (h *Handlers) UploadDeploymentFile(w http.ResponseWriter, r *http.Request) {
+	r.ParseMultipartForm(100000)
+
+	file, handler, err := r.FormFile("deploymentFile")
+
+	if err != nil {
+		fmt.Println("error getting the file")
+		sendJson(w, http.StatusBadRequest, "failed to retrieve file")
+		return
+	}
+
+	print(handler)
+
+	filename, err := utils.FileUpload(file)
+
+	if err != nil {
+		sendJson(w, http.StatusInternalServerError, err)
+	}
+
+	createDeploymentsFromFile := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "apply", "-f", filepath.Dir("../files/" + filename)},
+	}
+
+	result, err := createDeploymentsFromFile.Output()
+
+	if err != nil {
+		log.Println(err)
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
+		return
+	}
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+
+}
+
+func (h *Handlers) DescribeDeploymentScripts(w *http.ResponseWriter, r *http.Request) {
+
 }
