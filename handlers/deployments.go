@@ -142,6 +142,12 @@ func (h *Handlers) DeleteDeployments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) UpdateDeployments(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query()
+
+	var data DeploymentBody
+	getJson(r, &data)
+
+	fmt.Println(data, name)
 
 }
 
@@ -180,6 +186,28 @@ func (h *Handlers) UploadDeploymentFile(w http.ResponseWriter, r *http.Request) 
 
 }
 
-func (h *Handlers) DescribeDeploymentScripts(w *http.ResponseWriter, r *http.Request) {
+func (h *Handlers) DescribeDeploymentScripts(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+
+	if name == "" {
+		sendJson(w, 400, Message{Message: "Could not execute stated command"})
+		return
+	}
+
+	cmdDescripeDeployments := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{" h.ExecPath", "descripe", name},
+	}
+
+	result, err := cmdDescripeDeployments.Output()
+
+	if err != nil {
+		sendJson(w, 500, Message{Message: "Could not execute stated command"})
+		return
+	}
+
+	fmt.Println(result)
+
+	sendJson(w, 400, Message{Message: string(result)})
 
 }
