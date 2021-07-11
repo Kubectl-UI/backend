@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"os/user"
 )
 
 type Message struct {
@@ -124,6 +125,16 @@ func (h *Handlers) CreatePod(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) GetUser(w http.ResponseWriter, r *http.Request) {
+	currentUser, err := user.Current()
+	if err != nil {
+		sendJson(w, http.StatusNotFound, "User not found")
+		return
+	}
+
+	sendJson(w, http.StatusOK, currentUser)
 }
 
 func (h *Handlers) DeletePod(w http.ResponseWriter, r *http.Request) {
