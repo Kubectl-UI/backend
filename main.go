@@ -27,6 +27,9 @@ func main() {
 	r.HandleFunc("/delete-pod", h.DeletePod).Methods("POST")
 	r.HandleFunc("/port-forward", h.PortForwadPod).Methods("POST")
 
+	r.HandleFunc("/get/{resource}", h.Get).Methods("GET")
+	r.HandleFunc("/delete/{resource}", h.Delete).Methods("POST")
+
 	fmt.Println("Application listening at port " + port)
 	http.ListenAndServe(port, handlers.CORS()(r))
 }

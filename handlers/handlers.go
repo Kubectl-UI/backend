@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os/exec"
 	"os/user"
+
+	"github.com/gorilla/mux"
 )
 
 type Message struct {
@@ -32,6 +34,64 @@ func NewHandlers(executable string) *Handlers {
 		ExecPath: execPath,
 	}
 }
+
+func (h *Handlers) Get(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	resource := params["resource"]
+
+	getResource := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "get", resource},
+	}
+
+	log.Println(getResource.String())
+
+	result, err := getResource.Output()
+	if err != nil {
+		log.Panicf("Error GETTING resourse, error - %s", err)
+		return
+	}
+
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	resource := params["resource"]
+	query := r.URL.Query()
+
+	name := query.Get("name")
+	namespace := query.Get("namespace")
+
+	var args []string
+
+	if name == "" {
+		sendJson(w, http.StatusBadRequest, Message{Message: "Missing object name of resource"})
+		return
+	}
+
+	if namespace != "" {
+		args = []string{h.ExecPath, "delete", resource, name, "-n", namespace}
+	} else {
+		args = []string{h.ExecPath, "delete", resource, name}
+	}
+
+
+	deleteResource := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: args,
+	}
+
+	log.Println(deleteResource.String())
+
+	result, err := deleteResource.Output()
+	if err != nil {
+		log.Panicf("Error deleting resource, err - %s", err)
+	}
+
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
 
 func (h *Handlers) WelcomeMessage(w http.ResponseWriter, r *http.Request) {
 	sendJson(w, http.StatusOK, Message{Message: "Welcome to kubectl UI"})
