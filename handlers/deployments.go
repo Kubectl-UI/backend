@@ -94,8 +94,8 @@ func (h *Handlers) CreateDeployments(w http.ResponseWriter, r *http.Request) {
 		command = append(command, "-r="+strconv.Itoa(data.Replicas))
 	}
 
-	if data.Execute {
-		command = append(command, "--run-dry -o=yaml")
+	if !data.Execute {
+		command = append(command, "--dry-run=none", "-o=yaml")
 	}
 
 	cmdCreatePod := &exec.Cmd{
@@ -141,15 +141,17 @@ func (h *Handlers) DeleteDeployments(w http.ResponseWriter, r *http.Request) {
 	sendJson(w, http.StatusOK, Message{Message: string(result)})
 }
 
-func (h *Handlers) UpdateDeployments(w http.ResponseWriter, r *http.Request) {
-	name := r.URL.Query()
+// func (h *Handlers) UpdateDeployments(w http.ResponseWriter, r *http.Request) {
+// 	name := r.URL.Query()
 
-	var data DeploymentBody
-	getJson(r, &data)
+// 	var data DeploymentBody
+// 	getJson(r, &data)
 
-	fmt.Println(data, name)
+// 	fmt.Println(data, name)
 
-}
+// 	// kubectl set image deployment/nginx-deployment nginx=nginx:1.16.1 --record
+
+// }
 
 func (h *Handlers) UploadDeploymentFile(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(100000)
@@ -164,15 +166,16 @@ func (h *Handlers) UploadDeploymentFile(w http.ResponseWriter, r *http.Request) 
 
 	print(handler)
 
-	filename, err := utils.FileUpload(file)
+	filename, err := utils.FileUpload(file, handler)
 
 	if err != nil {
 		sendJson(w, http.StatusInternalServerError, err)
+		return
 	}
 
 	createDeploymentsFromFile := &exec.Cmd{
 		Path: h.ExecPath,
-		Args: []string{h.ExecPath, "apply", "-f", filepath.Dir("../files/" + filename)},
+		Args: []string{h.ExecPath, "apply", "-f", filepath.Dir("files/" + filename)},
 	}
 
 	result, err := createDeploymentsFromFile.Output()

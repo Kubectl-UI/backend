@@ -31,6 +31,7 @@ func main() {
 	r.HandleFunc("/get-deployments", h.GetDeployments)
 	r.HandleFunc("/create-deployment", h.CreateDeployments).Methods("POST")
 	r.HandleFunc("/delete-deployment", h.DeleteDeployments).Methods("DELETE")
+	r.HandleFunc("/upload-deployment-file", h.UploadDeploymentFile).Methods("POST")
 
 	fmt.Println("Application listening at port " + port)
 	http.ListenAndServe(port, handlers.CORS()(r))

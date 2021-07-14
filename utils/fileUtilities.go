@@ -1,33 +1,26 @@
 package utils
 
 import (
-	"errors"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
-	"time"
+	"os"
 )
 
-func FileUpload(file multipart.File) (string, error) {
+func FileUpload(file multipart.File, handler *multipart.FileHeader) (string, error) {
 
-	now := time.Now() // current local time
+	defer file.Close() //close the file when we finish
 
-	//store file temporarily
-	tempFile, err := ioutil.TempFile("files/"+now.Local().String(), "*.yaml")
-
-	if err != nil {
-		return "", errors.New("failed to store file temporarily")
-	}
-
-	//read file
-	readfile, err := ioutil.ReadAll(file)
+	f, err := os.OpenFile("files/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
 
 	if err != nil {
-		return "", errors.New("failes to read temp file")
+		return "", err
 	}
 
-	//store finally
-	tempFile.Write(readfile)
+	defer f.Close()
 
-	return tempFile.Name(), nil
+	io.Copy(f, file)
+
+	//here we save our file to our path
+	return handler.Filename, nil
 
 }
