@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	handler "kubectl-gui/handlers"
 	"net/http"
+
+	handler "github.com/phirmware/kubectl-gui/handlers"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -26,6 +27,11 @@ func main() {
 	r.HandleFunc("/create-pod", h.CreatePod).Methods("POST")
 	r.HandleFunc("/delete-pod", h.DeletePod).Methods("POST")
 	r.HandleFunc("/port-forward", h.PortForwadPod).Methods("POST")
+
+	r.HandleFunc("/get-deployments", h.GetDeployments)
+	r.HandleFunc("/create-deployment", h.CreateDeployments).Methods("POST")
+	r.HandleFunc("/delete-deployment", h.DeleteDeployments).Methods("DELETE")
+	r.HandleFunc("/upload-deployment-file", h.UploadDeploymentFile).Methods("POST")
 
 	fmt.Println("Application listening at port " + port)
 	http.ListenAndServe(port, handlers.CORS()(r))
