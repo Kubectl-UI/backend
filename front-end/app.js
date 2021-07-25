@@ -7,7 +7,9 @@ const url = 'http://localhost:8080'
 const getPodsButton = document.getElementById('get-pods')
 const describePodButton = document.getElementById('describe-pod')
 const username = document.getElementById('username')
+const dir = document.getElementById('dir')
 const nameInput = document.getElementById('name')
+const customInput = document.getElementById('custom')
 
 const podName = document.getElementById('pod-name')
 const filePath = document.getElementById('file-path')
@@ -17,11 +19,13 @@ const object = document.getElementById('object')
 
 const createPodButton = document.getElementById('create-pod')
 const deletePodButton = document.getElementById('delete-pod')
+const customButton = document.getElementById('custom-button')
 
 getPodsButton.onclick = get
 describePodButton.onclick = describePod
 createPodButton.onclick = createPod
-deletePodButton.onclick = deleteResource;
+deletePodButton.onclick = deleteResource
+customButton.onclick = customEvent;
 
 (async function() {
   const result = await fetch(`${url}/user`)
@@ -29,6 +33,7 @@ deletePodButton.onclick = deleteResource;
 
   console.log('body', body)
   username.textContent = body.Username
+  dir.textContent = body.HomeDir
 }())
 
 async function get() {
@@ -41,6 +46,23 @@ async function get() {
   console.log(body)
 
   termional.innerHTML = body.Message
+  if (!body.Message) termional.innerHTML = 'No resource found for this namespace'
+}
+
+async function customEvent() {
+  const customCommand = customInput.value
+  const customCommands = customCommand.split(' ')
+  const body = { Commands: customCommands }
+
+  const result = await fetch(`${url}/custom`, {
+    method: 'post',
+    body: JSON.stringify(body)
+  })
+  const response = await result.json()
+  console.log(response)
+
+  termional.innerHTML = response.Message
+  if (!response.Message) termional.innerHTML = 'No resource found for this namespace'
 }
 
 async function deleteResource() {

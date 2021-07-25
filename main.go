@@ -29,6 +29,7 @@ func main() {
 
 	r.HandleFunc("/get/{resource}", h.Get).Methods("GET")
 	r.HandleFunc("/delete/{resource}", h.Delete).Methods("POST")
+	r.HandleFunc("/custom", h.Custom).Methods("POST")
 
 	fmt.Println("Application listening at port " + port)
 	http.ListenAndServe(port, handlers.CORS()(r))

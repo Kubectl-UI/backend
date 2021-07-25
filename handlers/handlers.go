@@ -23,6 +23,7 @@ type IncomingData struct {
 	FilePath string
 	FromPort string
 	ToPort   string
+	Commands []string
 }
 
 func NewHandlers(executable string) *Handlers {
@@ -35,13 +36,44 @@ func NewHandlers(executable string) *Handlers {
 	}
 }
 
+func (h *Handlers) Custom(w http.ResponseWriter, r *http.Request) {
+	var data IncomingData
+	getJson(r, &data)
+
+	commands := data.Commands
+
+	args := []string{h.ExecPath}
+
+	customArgs := append(args, commands...)
+	customCommand := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: customArgs,
+	}
+
+	log.Println(customCommand.String())
+
+	result, err := customCommand.Output()
+	if err != nil {
+		log.Fatal("Something went wrong")
+		return
+	}
+
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
 func (h *Handlers) Get(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+	query := r.URL.Query()
 	resource := params["resource"]
+	namespace := query.Get("namespace")
 
 	getResource := &exec.Cmd{
 		Path: h.ExecPath,
 		Args: []string{h.ExecPath, "get", resource},
+	}
+
+	if namespace != "" {
+		getResource.Args = append(getResource.Args, "-n", namespace)
 	}
 
 	log.Println(getResource.String())
@@ -76,7 +108,6 @@ func (h *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
 		args = []string{h.ExecPath, "delete", resource, name}
 	}
 
-
 	deleteResource := &exec.Cmd{
 		Path: h.ExecPath,
 		Args: args,
@@ -91,7 +122,6 @@ func (h *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
 
 	sendJson(w, http.StatusOK, Message{Message: string(result)})
 }
-
 
 func (h *Handlers) WelcomeMessage(w http.ResponseWriter, r *http.Request) {
 	sendJson(w, http.StatusOK, Message{Message: "Welcome to kubectl UI"})
