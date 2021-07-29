@@ -50,11 +50,12 @@ async function get() {
 }
 
 async function customEvent() {
-  const customCommand = customInput.value
+  const customCommand = customInput.value.trim()
   const customCommands = customCommand.split(' ')
+  const namespaceName = namespace.value
   const body = { Commands: customCommands }
 
-  const result = await fetch(`${url}/custom`, {
+  const result = await fetch(`${url}/custom?namespace=${namespaceName}`, {
     method: 'post',
     body: JSON.stringify(body)
   })
