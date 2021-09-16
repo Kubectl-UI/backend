@@ -1,11 +1,15 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"kubectl-gui/config"
 	handler "kubectl-gui/server/handlers"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -37,15 +41,34 @@ func setup(cfg *config.KubectlUI) *mux.Router {
 }
 
 func Start(cfg *config.KubectlUI) {
+	sigChan := make(chan os.Signal)
+	ctx, cancel := context.WithTimeout(context.Background(), 3000*time.Second)
+	defer cancel()
+
 	r := setup(cfg)
 	port := cfg.Get(config.ApplicationPort)
+
 	s := &http.Server{
-		Handler: r,
-		Addr:    fmt.Sprintf(":%s", port),
+		Handler:      r,
+		Addr:         fmt.Sprintf(":%s", port),
+		ReadTimeout:  3 * time.Second,
+		WriteTimeout: 3 * time.Second,
 	}
 
-	log.Printf("Listening on port %s", port)
-	if err := s.ListenAndServe(); err != nil {
-		log.Fatal("Something went wrong, could not start server", err)
+	go func() {
+		log.Printf("Listening on port %s", port)
+		if err := s.ListenAndServe(); err != nil {
+			log.Fatal("Something went wrong, could not start server", err)
+		}
+	}()
+
+	signal.Notify(sigChan, os.Kill)
+	signal.Notify(sigChan, os.Interrupt)
+
+	signal := <-sigChan
+
+	log.Printf("Received %s signal, gracefully shutting down", signal)
+	if err := s.Shutdown(ctx); err != nil {
+		log.Fatalf("FATAL: Error while shutting down server: %s", err)
 	}
 }
