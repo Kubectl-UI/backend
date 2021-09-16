@@ -6,18 +6,83 @@ const url = 'http://localhost:8080'
 
 const getPodsButton = document.getElementById('get-pods')
 const describePodButton = document.getElementById('describe-pod')
+const username = document.getElementById('username')
+const dir = document.getElementById('dir')
+const nameInput = document.getElementById('name')
+const customInput = document.getElementById('custom')
 
 const podName = document.getElementById('pod-name')
 const filePath = document.getElementById('file-path')
+const resource = document.getElementById('resource')
+const namespace = document.getElementById('namespace')
+const object = document.getElementById('object')
 
 const createPodButton = document.getElementById('create-pod')
 const deletePodButton = document.getElementById('delete-pod')
+const customButton = document.getElementById('custom-button')
 
-getPodsButton.onclick = getPods
+getPodsButton.onclick = get
 describePodButton.onclick = describePod
 createPodButton.onclick = createPod
-deletePodButton.onclick = deletePod
+deletePodButton.onclick = deleteResource
+customButton.onclick = customEvent;
 
+(async function() {
+  const result = await fetch(`${url}/user`)
+  const body = await result.json()
+
+  console.log('body', body)
+  username.textContent = body.Username
+  dir.textContent = body.HomeDir
+}())
+
+async function get() {
+  const resourceName = resource.value
+  const namespaceName = namespace.value
+  if (!resourceName || resourceName === '') return alert('Input a valid resource')
+
+  const result = await fetch(`${url}/get/${resourceName}?namespace=${namespaceName}`)
+  const body = await result.json()
+  console.log(body)
+
+  termional.innerHTML = body.Message
+  if (!body.Message) termional.innerHTML = 'No resource found for this namespace'
+}
+
+async function customEvent() {
+  const customCommand = customInput.value.trim()
+  const customCommands = customCommand.split(' ')
+  const namespaceName = namespace.value
+  const body = { Commands: customCommands }
+
+  const result = await fetch(`${url}/custom?namespace=${namespaceName}`, {
+    method: 'post',
+    body: JSON.stringify(body)
+  })
+  const response = await result.json()
+  console.log(response)
+
+  termional.innerHTML = response.Message
+  if (!response.Message) termional.innerHTML = 'No resource found for this namespace'
+}
+
+async function deleteResource() {
+  console.log('start')
+  const objectName = object.value
+  const namespaceName = namespace.value
+  const nameValue = nameInput.value
+
+  if (!objectName || objectName === '') return alert('Input a valid resource')
+  if (!nameValue || nameValue === '') return alert('Input a valid name')
+
+  const result = await fetch(`${url}/delete/${objectName}?namespace=${namespaceName}&name=${nameValue}`, {
+    method: 'post'
+  })
+  const body = await result.json()
+  console.log(body)
+
+  termional.innerHTML = body.Message
+}
 
 async function getPods() {
   const result = await fetch(`${url}/get-pods`)

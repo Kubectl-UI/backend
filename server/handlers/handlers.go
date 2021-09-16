@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os/exec"
 	"os/user"
+
+	"github.com/gorilla/mux"
 )
 
 type Message struct {
@@ -21,6 +23,7 @@ type IncomingData struct {
 	FilePath string
 	FromPort string
 	ToPort   string
+	Commands []string
 }
 
 func NewHandlers(executable string) *Handlers {
@@ -31,6 +34,103 @@ func NewHandlers(executable string) *Handlers {
 	return &Handlers{
 		ExecPath: execPath,
 	}
+}
+
+func (h *Handlers) Custom(w http.ResponseWriter, r *http.Request) {
+	var data IncomingData
+	getJson(r, &data)
+
+	query := r.URL.Query()
+
+	namespace := query.Get("namespace")
+	if namespace == "" {
+		sendJson(w, http.StatusBadRequest, Message{Message: "Namespace missing"})
+		return
+	}
+
+	commands := data.Commands
+	commands = append(commands, "-n", namespace)
+
+
+	args := []string{h.ExecPath}
+
+	customArgs := append(args, commands...)
+	customCommand := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: customArgs,
+	}
+
+	log.Println(customCommand.String())
+
+	result, err := customCommand.Output()
+	if err != nil {
+		log.Printf("Something went wrong : %s", err)
+		return
+	}
+
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) Get(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	query := r.URL.Query()
+	resource := params["resource"]
+	namespace := query.Get("namespace")
+
+	getResource := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "get", resource},
+	}
+
+	if namespace != "" {
+		getResource.Args = append(getResource.Args, "-n", namespace)
+	}
+
+	log.Println(getResource.String())
+
+	result, err := getResource.Output()
+	if err != nil {
+		log.Panicf("Error GETTING resourse, error - %s", err)
+		return
+	}
+
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	resource := params["resource"]
+	query := r.URL.Query()
+
+	name := query.Get("name")
+	namespace := query.Get("namespace")
+
+	var args []string
+
+	if name == "" {
+		sendJson(w, http.StatusBadRequest, Message{Message: "Missing object name of resource"})
+		return
+	}
+
+	if namespace != "" {
+		args = []string{h.ExecPath, "delete", resource, name, "-n", namespace}
+	} else {
+		args = []string{h.ExecPath, "delete", resource, name}
+	}
+
+	deleteResource := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: args,
+	}
+
+	log.Println(deleteResource.String())
+
+	result, err := deleteResource.Output()
+	if err != nil {
+		log.Panicf("Error deleting resource, err - %s", err)
+	}
+
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
 }
 
 func (h *Handlers) WelcomeMessage(w http.ResponseWriter, r *http.Request) {
