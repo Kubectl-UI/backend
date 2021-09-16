@@ -1,21 +1,23 @@
-package main
+package server
 
 import (
 	"fmt"
-	handler "kubectl-gui/handlers"
+	"kubectl-gui/config"
+	handler "kubectl-gui/server/handlers"
+	"log"
 	"net/http"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
-const port = ":8080"
-const exec = "kubectl"
-
-func main() {
+func setup(cfg *config.KubectlUI) *mux.Router {
 	r := mux.NewRouter()
+	exec := cfg.Get(config.ConfigCommand)
+	if exec == nil {
+		log.Fatalf("FATAL: No execution path found")
+	}
 
-	h := handler.NewHandlers(exec)
+	h := handler.NewHandlers(exec.(string))
 
 	r.HandleFunc("/", h.WelcomeMessage).Methods("GET")
 	r.HandleFunc("/check", h.CheckKubectl).Methods("GET")
@@ -31,6 +33,19 @@ func main() {
 	r.HandleFunc("/delete/{resource}", h.Delete).Methods("POST")
 	r.HandleFunc("/custom", h.Custom).Methods("POST")
 
-	fmt.Println("Application listening at port " + port)
-	http.ListenAndServe(port, handlers.CORS()(r))
+	return r
+}
+
+func Start(cfg *config.KubectlUI) {
+	r := setup(cfg)
+	port := cfg.Get(config.ApplicationPort)
+	s := &http.Server{
+		Handler: r,
+		Addr:    fmt.Sprintf(":%s", port),
+	}
+
+	log.Printf("Listening on port %s", port)
+	if err := s.ListenAndServe(); err != nil {
+		log.Fatal("Something went wrong, could not start server", err)
+	}
 }

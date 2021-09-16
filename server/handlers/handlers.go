@@ -40,7 +40,17 @@ func (h *Handlers) Custom(w http.ResponseWriter, r *http.Request) {
 	var data IncomingData
 	getJson(r, &data)
 
+	query := r.URL.Query()
+
+	namespace := query.Get("namespace")
+	if namespace == "" {
+		sendJson(w, http.StatusBadRequest, Message{Message: "Namespace missing"})
+		return
+	}
+
 	commands := data.Commands
+	commands = append(commands, "-n", namespace)
+
 
 	args := []string{h.ExecPath}
 
@@ -54,7 +64,7 @@ func (h *Handlers) Custom(w http.ResponseWriter, r *http.Request) {
 
 	result, err := customCommand.Output()
 	if err != nil {
-		log.Fatal("Something went wrong")
+		log.Printf("Something went wrong : %s", err)
 		return
 	}
 
