@@ -19,11 +19,8 @@ type Handlers struct {
 }
 
 type IncomingData struct {
-	PodName  string
-	FilePath string
-	FromPort string
-	ToPort   string
-	Commands []string
+	Commands                            []string
+	PodName, FilePath, FromPort, ToPort string
 }
 
 func NewHandlers(executable string) *Handlers {
@@ -44,13 +41,15 @@ func (h *Handlers) Custom(w http.ResponseWriter, r *http.Request) {
 
 	namespace := query.Get("namespace")
 	if namespace == "" {
-		sendJson(w, http.StatusBadRequest, Message{Message: "Namespace missing"})
-		return
+		err := sendJson(w, http.StatusBadRequest, Message{Message: "Namespace missing"})
+		if err != nil {
+			return
+		}
+		panic(err)
 	}
 
 	commands := data.Commands
 	commands = append(commands, "-n", namespace)
-
 
 	args := []string{h.ExecPath}
 
@@ -68,7 +67,11 @@ func (h *Handlers) Custom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendJson(w, http.StatusOK, Message{Message: string(result)})
+	err = sendJson(w, http.StatusOK, Message{Message: string(result)})
+	if err != nil {
+		return
+	}
+	panic(err)
 }
 
 func (h *Handlers) Get(w http.ResponseWriter, r *http.Request) {
@@ -133,15 +136,15 @@ func (h *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
 	sendJson(w, http.StatusOK, Message{Message: string(result)})
 }
 
-func (h *Handlers) WelcomeMessage(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) WelcomeMessage(w http.ResponseWriter, _ *http.Request) {
 	sendJson(w, http.StatusOK, Message{Message: "Welcome to kubectl UI"})
 }
 
-func (h *Handlers) CheckKubectl(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) CheckKubectl(w http.ResponseWriter, _ *http.Request) {
 	sendJson(w, http.StatusOK, Message{Message: "Your kubectl path: " + h.ExecPath})
 }
 
-func (h *Handlers) GetVersion(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) GetVersion(w http.ResponseWriter, _ *http.Request) {
 	cmdKubectlVersion := &exec.Cmd{
 		Path: h.ExecPath,
 		Args: []string{h.ExecPath, "version"},
@@ -156,7 +159,7 @@ func (h *Handlers) GetVersion(w http.ResponseWriter, r *http.Request) {
 	sendJson(w, http.StatusOK, Message{Message: string(result)})
 }
 
-func (h *Handlers) GetPods(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) GetPods(w http.ResponseWriter, _ *http.Request) {
 	cmdGetPods := &exec.Cmd{
 		Path: h.ExecPath,
 		Args: []string{h.ExecPath, "get", "pods"},
@@ -225,7 +228,7 @@ func (h *Handlers) CreatePod(w http.ResponseWriter, r *http.Request) {
 	sendJson(w, http.StatusOK, Message{Message: string(result)})
 }
 
-func (h *Handlers) GetUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) GetUser(w http.ResponseWriter, _ *http.Request) {
 	currentUser, err := user.Current()
 	if err != nil {
 		sendJson(w, http.StatusNotFound, "User not found")
@@ -295,5 +298,8 @@ func sendJson(w http.ResponseWriter, statusCode int, data interface{}) error {
 }
 
 func getJson(r *http.Request, data interface{}) {
-	json.NewDecoder(r.Body).Decode(data)
+	err := json.NewDecoder(r.Body).Decode(data)
+	if err != nil {
+		return
+	}
 }
