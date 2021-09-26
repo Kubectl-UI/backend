@@ -176,6 +176,94 @@ func (h *Handlers) GetPods(w http.ResponseWriter, _ *http.Request) {
 	sendJson(w, http.StatusOK, Message{Message: string(result)})
 }
 
+func (h *Handlers) GetDeployments(w http.ResponseWriter, _ *http.Request) {
+	cmdGetDeployments := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "get", "deployments"},
+	}
+
+	log.Println(cmdGetDeployments.String())
+
+	result, err := cmdGetDeployments.Output()
+	if err != nil {
+		log.Println(err)
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
+		return
+	}
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+func (h *Handlers) DescribeDeployment(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	deployment := params["deployment"]
+	query := r.URL.Query()
+	namespace := query.Get("namespace")
+
+	var args []string
+
+	if namespace != "" {
+		args = []string{h.ExecPath, "describe", "deployment", deployment, "-n", namespace}
+	} else {
+		args = []string{h.ExecPath, "describe", "deployment", deployment}
+	}
+
+	describeDeployment := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: args,
+	}
+
+	log.Println(describeDeployment.String())
+
+	result, err := describeDeployment.Output()
+	if err != nil {
+		log.Println(err)
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
+		return
+	}
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
+func (h *Handlers) GetServices(w http.ResponseWriter, _ *http.Request) {
+	cmdGetServices := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: []string{h.ExecPath, "get", "services"},
+	}
+
+	log.Println(cmdGetServices.String())
+
+	result, err := cmdGetServices.Output()
+	if err != nil {
+		log.Println(err)
+	}
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+func (h *Handlers) DescribeService(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	service := params["service"]
+	query := r.URL.Query()
+	namespace := query.Get("namespace")
+
+	var args []string
+
+	if namespace != "" {
+		args = []string{h.ExecPath, "describe", "service", service, "-n", namespace}
+	} else {
+		args = []string{h.ExecPath, "describe", "service", service}
+	}
+
+	describeService := &exec.Cmd{
+		Path: h.ExecPath,
+		Args: args,
+	}
+	log.Println(describeService.String())
+	result, err := describeService.Output()
+	if err != nil {
+		log.Println(err)
+		sendJson(w, http.StatusInternalServerError, Message{Message: "Could not execute stated command"})
+		return
+	}
+	sendJson(w, http.StatusOK, Message{Message: string(result)})
+}
+
 func (h *Handlers) DescribePod(w http.ResponseWriter, r *http.Request) {
 	var data IncomingData
 	getJson(r, &data)
