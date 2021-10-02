@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
-	"kubectl-gui/config"
-	handler "kubectl-gui/server/handlers"
+	"github.com/Kubectl-UI/kubectl-ui/config"
+	handler "github.com/Kubectl-UI/kubectl-ui/server/handlers"
 	"log"
 	"net/http"
 	"os"

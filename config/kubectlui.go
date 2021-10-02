@@ -15,7 +15,7 @@ const (
 )
 
 func (k *KubectlUI) setDefaults() {
-	k.v.SetDefault(ApplicationPort, "8080")
+	k.v.SetDefault(ApplicationPort, "3553")
 	k.v.SetDefault(ConfigCommand, "kubectl")
 	k.v.SetDefault(FilePath, "./examples")
 }
