@@ -234,6 +234,7 @@ func (h *Handlers) GetServices(w http.ResponseWriter, _ *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
+	// display result in a structured format
 	sendJson(w, http.StatusOK, Message{Message: string(result)})
 }
 func (h *Handlers) DescribeService(w http.ResponseWriter, r *http.Request) {
