@@ -3,14 +3,16 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/Kubectl-UI/kubectl-ui/config"
-	handler "github.com/Kubectl-UI/kubectl-ui/server/handlers"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/Kubectl-UI/kubectl-ui/config"
+	handler "github.com/Kubectl-UI/kubectl-ui/server/handlers"
+
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -53,7 +55,7 @@ func Start(cfg *config.KubectlUI) {
 	port := cfg.Get(config.ApplicationPort)
 
 	s := &http.Server{
-		Handler:      r,
+		Handler:      handlers.CORS()(r),
 		Addr:         fmt.Sprintf(":%s", port),
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 3 * time.Second,
